@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Project Odysseus - Isolated Test Mode</title>
+<title>Project Odysseus - Camera AI Mode</title>
 <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 <style>
   body { font-family: sans-serif; margin: 0; padding: 20px; background-color: #f4f4f9; max-width: 800px; margin: 0 auto; }
@@ -11,7 +11,6 @@
   #intro, #resultPopup { text-align: center; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 1000; padding: 20px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: center; align-items: center; }
   .art { font-family: monospace; white-space: pre; margin: 20px 0; font-size: 1.2em; line-height: 1.2; }
   
-  /* 테스트 모드 상단 붉은 띠 스타일 */
   #testModeBanner { background-color: #dc3545; color: white; text-align: center; padding: 8px; font-weight: bold; font-size: 0.9em; margin: -20px -20px 15px -20px; display: none; }
   
   .app-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
@@ -111,11 +110,12 @@
   <p id="loadingText">AI가 이미지를 판별 중입니다...</p>
 </div>
 
-<input type="file" id="aiImageInput" accept="image/*" class="hidden" onchange="handleImageUpload(event)">
+<!-- 카메라 직접 열기용 파일 입력 (capture="environment" 속성으로 후면 카메라 즉시 구동) -->
+<input type="file" id="aiImageInput" accept="image/*" capture="environment" class="hidden" onchange="handleImageUpload(event)">
 
 <script>
   let db;
-  let dbName = "OdysseusDB"; // 기본 본 모드 DB 이름[span_2](start_span)[span_2](end_span)
+  let dbName = "OdysseusDB"; 
   let currentDate = new Date().toISOString().split('T')[0];
   let currentWeekStart = getMonday(new Date());
   let currentMonthDate = new Date();
@@ -207,7 +207,6 @@
     };
   }
 
-  // --- 테스트 모드 전용 수동 트리거 함수들 ---
   function testSimulateSuccess() {
     showResultPopup(
       "항해 성공 (테스트)", 
@@ -237,25 +236,17 @@
     });
   }
 
-  // 테스트 모드 전용 초기화 (설정 데이터는 유지하고 계획 및 라이프만 리셋)
   function testResetData() {
     if (!confirm("설정(비밀번호, API 키 등)을 제외한 모든 테스트 계획과 라이프(3회)를 초기화하시겠습니까?")) return;
     
     const transaction = db.transaction(['tasks', 'settings'], 'readwrite');
-    
-    // 1. 모든 태스크 삭제
     transaction.objectStore('tasks').clear();
-    
-    // 2. 남은 라이프를 3으로 재설정
     transaction.objectStore('settings').put({ key: 'remainingLives', value: '3' });
     
     transaction.oncomplete = () => {
       remainingLives = 3;
       alert("테스트 데이터가 초기화되었습니다.");
       switchView(currentView);
-    };
-    transaction.onerror = (err) => {
-      alert("초기화 중 오류 발생: " + err);
     };
   }
 
@@ -276,7 +267,6 @@
     transaction.objectStore('settings').put({ key: key, value: value });
   }
 
-  // 일반 Start 버튼 (본 모드 DB 사용)
   document.getElementById('startBtn').addEventListener('click', () => {
     isTestMode = false;
     dbName = "OdysseusDB";
@@ -289,14 +279,13 @@
     setTimeout(() => switchView('daily'), 200);
   });
 
-  // TEST MOD 버튼 (테스트 전용 분리된 DB 사용)
   document.getElementById('testModeBtn').addEventListener('click', () => {
     isTestMode = true;
-    dbName = "OdysseusTestDB"; // 데이터가 섞이지 않도록 격리된 테스트용 DB 명칭 사용
+    dbName = "OdysseusTestDB";
     document.getElementById('testModeBanner').style.display = 'block';
     document.getElementById('intro').classList.add('hidden');
     document.getElementById('mainApp').classList.remove('hidden');
-    isUnlocked = true; // 테스트 편의를 위해 잠금 해제 상태로 시작
+    isUnlocked = true;
     updateEditLockButtonUI();
     initDB();
     setTimeout(() => switchView('daily'), 200);
@@ -463,8 +452,8 @@
       const task = e.target.result;
       if (!task) return;
       getStoredSetting('geminiKey', async (apiKey) => {
-        document.getElementById('loadingText').innerText = "이미지 판별 중...";
-        document.getElementById('loadingOverlay').classList.add('hidden');
+        document.getElementById('loadingText').innerText = "카메라 사진 판별 중...";
+        document.getElementById('loadingOverlay').classList.remove('hidden');
         try {
           const base64Data = await fileToBase64(file);
           const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${apiKey}`, {
@@ -475,10 +464,10 @@
           const data = await response.json();
           document.getElementById('loadingOverlay').classList.add('hidden');
           if (data.candidates && data.candidates[0].content.parts[0].text.toUpperCase().includes('PASS')) {
-            alert("인증 성공");
+            alert("인증 성공!");
             updateTaskStatus(taskId, true);
           } else {
-            alert("인증 실패");
+            alert("인증 실패 (조건에 부합하지 않음)");
           }
         } catch (err) {
           document.getElementById('loadingOverlay').classList.add('hidden');
@@ -502,25 +491,16 @@
       if (confirm("해제하시겠습니까?")) updateTaskStatus(task.id, false);
       return;
     }
-    if (task.type === 'simple') updateTaskStatus(task.id, true);
-    else if (task.type === 'location') verifyLocation(task);
-    else if (task.type === 'ai') verifyAIImage(task);
-  }
-
-  function verifyLocation(task) {
-    if (!navigator.geolocation) { alert("위치 미지원"); return; }
-    navigator.geolocation.getCurrentPosition(
-      (pos) => { alert("위치 인증 성공"); updateTaskStatus(task.id, true); },
-      (err) => { alert("위치 실패: " + err.message); }
-    );
-  }
-
-  function verifyAIImage(task) {
-    getStoredSetting('geminiKey', (apiKey) => {
-      if (!apiKey) { alert("API Key 필요"); switchView('settings'); return; }
-      activeTaskIdForAI = task.id;
-      document.getElementById('aiImageInput').click();
-    });
+    if (task.type === 'simple') {
+      updateTaskStatus(task.id, true);
+    } else if (task.type === 'ai') {
+      // 카메라 실시간 촬영 기반 AI 인증으로 대체 작동
+      getStoredSetting('geminiKey', (apiKey) => {
+        if (!apiKey) { alert("Gemini API Key가 필요합니다. 설정에서 먼저 입력해주세요."); switchView('settings'); return; }
+        activeTaskIdForAI = task.id;
+        document.getElementById('aiImageInput').click();
+      });
+    }
   }
 
   function updateTaskStatus(id, status) {
@@ -556,10 +536,9 @@
         <input type="text" id="taskTitle" placeholder="계획 제목">
         <select id="taskType" onchange="toggleCriteriaInput(this.value)">
           <option value="simple">단순 체크</option>
-          <option value="location">위치 인증</option>
-          <option value="ai">AI 이미지 인증</option>
+          <option value="ai">카메라 AI 인증</option>
         </select>
-        <input type="text" id="taskCriteria" class="hidden" placeholder="인증 기준 입력">
+        <input type="text" id="taskCriteria" class="hidden" placeholder="인증 기준 입력 (예: 책상 위 공부 흔적 사진)">
         <button onclick="addNewTask()" style="width: 100%; background: #28a745; color: white; border: none; padding: 10px; border-radius: 4px;">추가하기</button>
       </div>
     ` : `<div class="locked-notice"> 잠금 상태입니다.</div>`;
@@ -622,12 +601,15 @@
           </div>
         ` : '';
 
+        // 인증 방식 라벨 표기 (ai인 경우 카메라 인증으로 표시)
+        let typeLabel = task.type === 'ai' ? '📷 카메라 인증' : '✔️ 단순 체크';
+
         html += `
           <li class="task-item">
             <button onclick="handleTaskVerification({id: ${task.id}, type: '${task.type}', completed: ${task.completed}})" style="background: ${task.completed ? '#6c757d' : '#007bff'}; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-weight: bold;">${task.completed ? ' 완료' : '미완료'}</button>
             <div class="task-info">
               <div class="task-title ${task.completed ? 'completed' : ''}">${escapeHtml(task.title)}</div>
-              <div class="task-criteria">방식: ${task.type} ${task.criteria ? `| 기준: ${escapeHtml(task.criteria)}` : ''}</div>
+              <div class="task-criteria">방식: ${typeLabel} ${task.criteria ? `| 기준: ${escapeHtml(task.criteria)}` : ''}</div>
             </div>
             ${actionButtons}
           </li>
@@ -777,7 +759,6 @@
   }
 
   function renderSettingsView(container) {
-    // 테스트 모드일 때만 설정 화면 하단에 테스트 데이터 초기화 버튼 노출
     let testResetButtonHtml = isTestMode ? `
       <button onclick="testResetData()" style="width:100%; background:#dc3545; color:white; border:none; padding:12px; border-radius:4px; margin-top:10px; font-weight:bold;">🧹 테스트 데이터 초기화 (계획 및 라이프 리셋)</button>
     ` : '';
