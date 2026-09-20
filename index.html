@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Project Odysseus - Final Fix</title>
+<title>Project Odysseus - Fully Fixed</title>
 <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 <style>
   body { font-family: sans-serif; margin: 0; padding: 20px; background-color: #f4f4f9; max-width: 800px; margin: 0 auto; }
@@ -72,7 +72,6 @@
 </head>
 <body>
 
-<!-- 인트로 화면 -->
 <div id="intro">
   <h1>Project Odysseus</h1>
   <div class="art">
@@ -88,7 +87,6 @@
   </div>
 </div>
 
-<!-- 자정 결과 팝업 화면 -->
 <div id="resultPopup" class="hidden">
   <h2 id="resultPopupTitle">어제의 항해 결과</h2>
   <div class="art" id="resultPopupArt"></div>
@@ -121,7 +119,7 @@
 <script>
   let db;
   let dbName = "OdysseusDB"; 
-  let currentDate = new Date().toISOString().split('T')[0]; // 실시간 오늘 날짜 반영
+  let currentDate = new Date().toISOString().split('T')[0];
   let currentWeekStart = getMonday(new Date());
   let currentMonthDate = new Date();
   let isUnlocked = false;
@@ -273,7 +271,7 @@
   document.getElementById('startBtn').addEventListener('click', () => {
     isTestMode = false;
     dbName = "OdysseusDB";
-    currentDate = new Date().toISOString().split('T')[0]; // 실시간 날짜 동기화
+    currentDate = new Date().toISOString().split('T')[0]; // 진입 시 실시간 오늘 날짜 강제 동기화
     document.getElementById('testModeBanner').style.display = 'none';
     document.getElementById('intro').classList.add('hidden');
     document.getElementById('mainApp').classList.remove('hidden');
@@ -286,7 +284,7 @@
   document.getElementById('testModeBtn').addEventListener('click', () => {
     isTestMode = true;
     dbName = "OdysseusTestDB";
-    currentDate = new Date().toISOString().split('T')[0]; // 실시간 날짜 동기화
+    currentDate = new Date().toISOString().split('T')[0]; // 진입 시 실시간 오늘 날짜 강제 동기화
     document.getElementById('testModeBanner').style.display = 'block';
     document.getElementById('intro').classList.add('hidden');
     document.getElementById('mainApp').classList.remove('hidden');
@@ -443,7 +441,6 @@
     });
   }
 
-  // 개별 카메라 인증 실행 함수
   async function verifyTaskWithCamera(taskId) {
     const fileInput = document.getElementById(`taskFile_${taskId}`);
     const file = fileInput.files[0];
