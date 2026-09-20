@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Project Odysseus - Fully Fixed</title>
+<title>Project Odysseus - Final Complete</title>
 <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 <style>
   body { font-family: sans-serif; margin: 0; padding: 20px; background-color: #f4f4f9; max-width: 800px; margin: 0 auto; }
@@ -113,13 +113,23 @@
   <p id="loadingText">AI가 이미지를 판별 중입니다...</p>
 </div>
 
-<!-- 5km 복구 전용 카메라 입력 -->
 <input type="file" id="aiImageInput" accept="image/*" capture="environment" class="hidden" onchange="handleRunningRecoveryUpload(event)">
 
 <script>
   let db;
   let dbName = "OdysseusDB"; 
-  let currentDate = new Date().toISOString().split('T')[0];
+
+  function getTodayKST() {
+    const now = new Date();
+    const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+    const kstTime = new Date(utc + (9 * 3600000));
+    const year = kstTime.getFullYear();
+    const month = String(kstTime.getMonth() + 1).padStart(2, '0');
+    const day = String(kstTime.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  let currentDate = getTodayKST();
   let currentWeekStart = getMonday(new Date());
   let currentMonthDate = new Date();
   let isUnlocked = false;
@@ -156,7 +166,7 @@
   }
 
   function checkMidnightEvaluation() {
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = getTodayKST();
     getStoredSetting('lastCheckedDate', (lastDate) => {
       if (!lastDate) {
         saveSettingDirect('lastCheckedDate', todayStr);
@@ -271,7 +281,7 @@
   document.getElementById('startBtn').addEventListener('click', () => {
     isTestMode = false;
     dbName = "OdysseusDB";
-    currentDate = new Date().toISOString().split('T')[0]; // 진입 시 실시간 오늘 날짜 강제 동기화
+    currentDate = getTodayKST();
     document.getElementById('testModeBanner').style.display = 'none';
     document.getElementById('intro').classList.add('hidden');
     document.getElementById('mainApp').classList.remove('hidden');
@@ -284,7 +294,7 @@
   document.getElementById('testModeBtn').addEventListener('click', () => {
     isTestMode = true;
     dbName = "OdysseusTestDB";
-    currentDate = new Date().toISOString().split('T')[0]; // 진입 시 실시간 오늘 날짜 강제 동기화
+    currentDate = getTodayKST();
     document.getElementById('testModeBanner').style.display = 'block';
     document.getElementById('intro').classList.add('hidden');
     document.getElementById('mainApp').classList.remove('hidden');
@@ -372,15 +382,12 @@
     return d.toISOString().split('T')[0];
   }
 
+  // 5km 복구 버튼 클릭 시 라이프 제한 없이 바로 카메라/갤러리를 열어 테스트 가능하도록 수정
   function startRunningRecovery() {
     getStoredSetting('geminiKey', (apiKey) => {
       if (!apiKey) {
-        alert("Gemini API Key가 설정되어 있지 않습니다.");
+        alert("Gemini API Key가 설정되어 있지 않습니다. 설정 화면에서 먼저 입력해주세요.");
         switchView('settings');
-        return;
-      }
-      if (remainingLives >= 3) {
-        alert("기회가 가득 차 있습니다. (3/3)");
         return;
       }
       document.getElementById('aiImageInput').click();
