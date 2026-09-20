@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Project Odysseus - 5km Recovery Mode</title>
+<title>Project Odysseus - Final Fix</title>
 <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 <style>
   body { font-family: sans-serif; margin: 0; padding: 20px; background-color: #f4f4f9; max-width: 800px; margin: 0 auto; }
@@ -121,7 +121,7 @@
 <script>
   let db;
   let dbName = "OdysseusDB"; 
-  let currentDate = new Date().toISOString().split('T')[0];
+  let currentDate = new Date().toISOString().split('T')[0]; // 실시간 오늘 날짜 반영
   let currentWeekStart = getMonday(new Date());
   let currentMonthDate = new Date();
   let isUnlocked = false;
@@ -273,6 +273,7 @@
   document.getElementById('startBtn').addEventListener('click', () => {
     isTestMode = false;
     dbName = "OdysseusDB";
+    currentDate = new Date().toISOString().split('T')[0]; // 실시간 날짜 동기화
     document.getElementById('testModeBanner').style.display = 'none';
     document.getElementById('intro').classList.add('hidden');
     document.getElementById('mainApp').classList.remove('hidden');
@@ -285,6 +286,7 @@
   document.getElementById('testModeBtn').addEventListener('click', () => {
     isTestMode = true;
     dbName = "OdysseusTestDB";
+    currentDate = new Date().toISOString().split('T')[0]; // 실시간 날짜 동기화
     document.getElementById('testModeBanner').style.display = 'block';
     document.getElementById('intro').classList.add('hidden');
     document.getElementById('mainApp').classList.remove('hidden');
@@ -387,7 +389,6 @@
     });
   }
 
-  // 5km 복구 AI 판별 로직
   function handleRunningRecoveryUpload(event) {
     const file = event.target.files[0];
     if (!file) return;
@@ -442,11 +443,12 @@
     });
   }
 
+  // 개별 카메라 인증 실행 함수
   async function verifyTaskWithCamera(taskId) {
     const fileInput = document.getElementById(`taskFile_${taskId}`);
     const file = fileInput.files[0];
     if (!file) {
-      alert("먼저 카메라 버튼을 눌러 사진을 촬영하거나 선택해주세요.");
+      alert("먼저 [파일 선택/촬영] 버튼을 눌러 사진을 올려주세요.");
       return;
     }
 
@@ -547,7 +549,7 @@
           <option value="simple">단순 체크</option>
           <option value="ai">카메라 AI 인증</option>
         </select>
-        <input type="text" id="taskCriteria" class="hidden" placeholder="인증 기준 입력 (예: 책상 위 공부 흔적 사진)">
+        <input type="text" id="taskCriteria" class="hidden" placeholder="인증 기준 입력 (예: 스마트워치 5km 기록 인증)">
         <button onclick="addNewTask()" style="width: 100%; background: #28a745; color: white; border: none; padding: 10px; border-radius: 4px;">추가하기</button>
       </div>
     ` : `<div class="locked-notice"> 잠금 상태입니다.</div>`;
